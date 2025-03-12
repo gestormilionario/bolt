@@ -1,14 +1,10 @@
-version: '3.7'
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile-coolify
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`bolt.myflux.one`)"
-      - "traefik.http.services.app.loadbalancer.server.port=5173"
+    ports:
+      - "3000:5173"
     environment:
       - NODE_ENV=production
       - PORT=5173
@@ -68,7 +64,7 @@ services:
     profiles: ["development", "default"]
 
   app-prebuild:
-    image: ghcr.io/stackblitz-labs/bolt.diy:latest
+    image: ghcr.io/stackblitz-labs/bolt.diy:latest 
     ports:
       - "5173:5173"
     environment:
@@ -84,7 +80,3 @@ services:
     command: pnpm run dockerstart
     profiles:
       - prebuilt
-
-networks:
-  traefik:
-    external: true
