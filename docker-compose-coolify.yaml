@@ -1,13 +1,19 @@
+version: '3.7'
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile-coolify
     ports:
-      - "3001:5174"
+      - "3000:5173"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`bolt.myflux.one`)"
+      - "traefik.http.services.app.loadbalancer.server.port=5173"
     environment:
       - NODE_ENV=production
-      - PORT=5174
+      - PORT=5173
       - GROQ_API_KEY=${GROQ_API_KEY}
       - HuggingFace_API_KEY=${HuggingFace_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -32,10 +38,10 @@ services:
       - NODE_ENV=development
       - VITE_HMR_PROTOCOL=ws
       - VITE_HMR_HOST=localhost
-      - VITE_HMR_PORT=5174
+      - VITE_HMR_PORT=5173
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
-      - PORT=5174
+      - PORT=5173
       - GROQ_API_KEY=${GROQ_API_KEY}
       - HuggingFace_API_KEY=${HuggingFace_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -59,19 +65,19 @@ services:
         consistency: cached
       - /app/node_modules
     ports:
-      - "5174:5174"
+      - "5173:5173"
     command: pnpm run dev --host 0.0.0.0
     profiles: ["development", "default"]
 
   app-prebuild:
-    image: ghcr.io/stackblitz-labs/bolt.diy:latest 
+    image: ghcr.io/stackblitz-labs/bolt.diy:latest
     ports:
-      - "5174:5174"
+      - "5173:5173"
     environment:
       - NODE_ENV=production
       - COMPOSE_PROFILES=production
       # No strictly needed but serving as hints for Coolify
-      - PORT=5174
+      - PORT=5173
       - OLLAMA_API_BASE_URL=http://127.0.0.1:11434
       - DEFAULT_NUM_CTX=${DEFAULT_NUM_CTX:-32768}
       - RUNNING_IN_DOCKER=true
@@ -80,3 +86,24 @@ services:
     command: pnpm run dockerstart
     profiles:
       - prebuilt
+
+  traefik:
+    image: traefik:v2.5
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=seu-email@dominio.com"
+      - "--certificatesresolvers.myresolver.acme.storage=acme.json"
+    ports:
+      - "80:80"      # Porta HTTP
+      - "443:443"    # Porta HTTPS
+      - "8080:8080"  # Painel do Traefik
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true
