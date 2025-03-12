@@ -5,8 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-coolify
-    ports:
-      - "3000:5173"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=Host(`bolt.myflux.one`)"
@@ -86,23 +84,6 @@ services:
     command: pnpm run dockerstart
     profiles:
       - prebuilt
-
-  traefik:
-    image: traefik:v2.5
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--entryPoints.web.address=:80"
-      - "--entryPoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=seu-email@dominio.com"
-      - "--certificatesresolvers.myresolver.acme.storage=acme.json"
-    ports:
-      - "80:80"      # Porta HTTP
-      - "443:443"    # Porta HTTPS
-      - "8080:8080"  # Painel do Traefik
-    networks:
-      - traefik
 
 networks:
   traefik:
